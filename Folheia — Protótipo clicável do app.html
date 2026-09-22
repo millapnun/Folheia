@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Folheia — protótipo do app</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EAE3D2;
+    --paper-raised: #F2ECDD;
+    --ink: #26201A;
+    --ink-soft: #6b6350;
+    --wine: #7E3232;
+    --wine-dark: #5E2424;
+    --moss: #4C5D40;
+    --gold: #A9822E;
+    --rule: rgba(38,32,26,0.14);
+    --app-bg: #FBF8F1;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1D1A15; --paper-raised: #24211A; --ink: #EDE6D6; --ink-soft: #a79c85;
+      --wine: #C97A7A; --wine-dark: #E39B9B; --moss: #93A87F; --gold: #D3AE5F;
+      --rule: rgba(237,230,214,0.14); --app-bg: #211D17;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1D1A15; --paper-raised: #24211A; --ink: #EDE6D6; --ink-soft: #a79c85;
+    --wine: #C97A7A; --wine-dark: #E39B9B; --moss: #93A87F; --gold: #D3AE5F;
+    --rule: rgba(237,230,214,0.14); --app-bg: #211D17;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100%;
+    background: var(--paper); color: var(--ink);
+    font-family: 'Public Sans', system-ui, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 28px 16px 40px;
+  }
+  h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; margin: 0; font-weight: 600; }
+
+  .intro { text-align: center; max-width: 480px; margin-bottom: 22px; }
+  .intro h1 { font-size: 24px; }
+  .intro p { color: var(--ink-soft); font-size: 14px; margin-top: 6px; }
+
+  .phone {
+    width: 100%; max-width: 380px; height: 720px; max-height: 82vh;
+    background: var(--app-bg);
+    border-radius: 34px; border: 8px solid var(--ink);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    overflow: hidden; position: relative; display: flex; flex-direction: column;
+  }
+  .statusbar { height: 26px; flex: none; }
+
+  .screen {
+    flex: 1; display: none; flex-direction: column; overflow: hidden; position: relative;
+  }
+  .screen.active { display: flex; }
+
+  .topbar {
+    padding: 14px 18px 10px; display: flex; align-items: center; justify-content: space-between; flex: none;
+    border-bottom: 1px solid var(--rule);
+  }
+  .topbar h2 { font-size: 19px; }
+  .topbar .sub { font-size: 12px; color: var(--ink-soft); }
+
+  .scroll { flex: 1; overflow-y: auto; padding: 16px 18px 90px; }
+
+  /* Estante */
+  .shelf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .mini-book {
+    aspect-ratio: 2/3; border-radius: 5px; display: flex; align-items: flex-end;
+    padding: 8px 6px; color: #fff; font-size: 11px; font-weight: 600; line-height: 1.15;
+    box-shadow: inset 0 -18px 18px -12px rgba(0,0,0,0.35);
+  }
+  .add-book {
+    aspect-ratio: 2/3; border-radius: 5px; border: 2px dashed var(--rule);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-soft); font-size: 26px; background: transparent; cursor: pointer;
+  }
+
+  /* Swipe */
+  .swipe-area { flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px 24px 100px; position: relative; }
+  .card {
+    width: 100%; max-width: 260px; aspect-ratio: 3/4.3; border-radius: 16px; color: #fff;
+    display: flex; flex-direction: column; justify-content: flex-end; padding: 20px;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.28);
+    transition: transform 0.28s ease, opacity 0.28s ease;
+    position: absolute;
+  }
+  .card h3 { color: #fff; font-size: 21px; }
+  .card .author { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .card .badge {
+    align-self: flex-start; background: rgba(255,255,255,0.22); font-size: 11px;
+    padding: 4px 9px; border-radius: 20px; margin-bottom: 10px;
+  }
+  .card.leaving-like { transform: translateX(140%) rotate(14deg); opacity: 0; }
+  .card.leaving-pass { transform: translateX(-140%) rotate(-14deg); opacity: 0; }
+
+  .swipe-actions {
+    position: absolute; bottom: 26px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 20px;
+  }
+  .round-btn {
+    width: 54px; height: 54px; border-radius: 50%; border: none; cursor: pointer;
+    font-size: 22px; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+  }
+  .round-btn.pass { background: var(--paper-raised); color: var(--ink-soft); border: 1px solid var(--rule); }
+  .round-btn.like { background: var(--wine); color: #fff; }
+
+  /* Match */
+  .match-screen {
+    align-items: center; justify-content: center; text-align: center; padding: 30px; gap: 14px;
+    background: linear-gradient(180deg, var(--wine) 0%, var(--wine-dark) 100%);
+    color: #fff;
+  }
+  .match-screen h2 { color: #fff; font-size: 30px; }
+  .match-screen p { color: rgba(255,255,255,0.85); font-size: 14px; max-width: 26ch; margin: 0; }
+  .match-books { display: flex; gap: -10px; margin: 10px 0; }
+  .match-books .mini-book { width: 78px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+  .match-books .mini-book:first-child { transform: rotate(-8deg) translateX(10px); }
+  .match-books .mini-book:last-child { transform: rotate(8deg) translateX(-10px); }
+  .match-cta {
+    margin-top: 14px; background: #fff; color: var(--wine-dark); border: none;
+    padding: 13px 26px; border-radius: 30px; font-weight: 700; font-size: 14px; cursor: pointer;
+  }
+
+  /* Chat */
+  .chat-scroll { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .bubble { max-width: 76%; padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.35; }
+  .bubble.them { background: var(--paper-raised); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .bubble.me { background: var(--wine); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .chat-footer {
+    flex: none; padding: 10px 14px; border-top: 1px solid var(--rule);
+    display: flex; gap: 8px;
+  }
+  .chat-footer .fake-input {
+    flex: 1; background: var(--paper-raised); border-radius: 20px; padding: 10px 16px;
+    color: var(--ink-soft); font-size: 13px;
+  }
+  .chat-footer .send-btn {
+    background: var(--wine); color: #fff; border: none; width: 38px; height: 38px;
+    border-radius: 50%; font-size: 15px; cursor: pointer;
+  }
+
+  /* Confirmação */
+  .confirm-screen { align-items: center; justify-content: center; text-align: center; padding: 30px; gap: 10px; }
+  .check-circle {
+    width: 66px; height: 66px; border-radius: 50%; background: var(--moss); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 30px; margin-bottom: 6px;
+  }
+  .confirm-screen h2 { font-size: 22px; }
+  .confirm-screen p { color: var(--ink-soft); font-size: 14px; max-width: 26ch; margin: 0; }
+  .stars { display: flex; gap: 6px; margin-top: 14px; font-size: 26px; color: var(--gold); }
+
+  .tabbar {
+    flex: none; display: flex; border-top: 1px solid var(--rule); background: var(--app-bg);
+    padding: 8px 6px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  .tab {
+    flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center;
+    gap: 3px; font-family: 'Public Sans', sans-serif; font-size: 10.5px; color: var(--ink-soft);
+    cursor: pointer; padding: 4px 0;
+  }
+  .tab.active { color: var(--wine); font-weight: 600; }
+  .tab .ico { font-size: 18px; }
+
+  .hint {
+    max-width: 380px; text-align: center; margin-top: 16px; font-size: 12.5px; color: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>Folheia — protótipo clicável</h1>
+  <p>Fluxo de ponta a ponta: cadastrar estante → descobrir por swipe → dar match → combinar no chat → confirmar troca.</p>
+</div>
+
+<div class="phone">
+  <div class="statusbar"></div>
+
+  <!-- Estante -->
+  <section class="screen active" data-screen="estante">
+    <div class="topbar">
+      <div><h2>Sua estante</h2><div class="sub">6 livros prontos pra troca</div></div>
+    </div>
+    <div class="scroll">
+      <div class="shelf-grid" id="shelfGrid"></div>
+    </div>
+  </section>
+
+  <!-- Descobrir -->
+  <section class="screen" data-screen="descobrir">
+    <div class="topbar">
+      <div><h2>Descobrir</h2><div class="sub">Perto de você · 800m–3km</div></div>
+    </div>
+    <div class="swipe-area" id="swipeArea"></div>
+    <div class="swipe-actions">
+      <button class="round-btn pass" id="passBtn" aria-label="Passar">✕</button>
+      <button class="round-btn like" id="likeBtn" aria-label="Curtir">♥</button>
+    </div>
+  </section>
+
+  <!-- Match -->
+  <section class="screen match-screen" data-screen="match">
+    <span style="font-size:38px;">🎉</span>
+    <h2>Deu match!</h2>
+    <p>Você e a Marina querem trocar os livros um do outro.</p>
+    <div class="match-books">
+      <div class="mini-book" style="background:var(--gold)">Poesia<br>Reunida</div>
+      <div class="mini-book" style="background:var(--moss)">Duna</div>
+    </div>
+    <button class="match-cta" data-goto="chat">Abrir conversa</button>
+  </section>
+
+  <!-- Chat -->
+  <section class="screen" data-screen="chat">
+    <div class="topbar">
+      <div><h2>Marina</h2><div class="sub">Match sobre "Duna" ↔ "Poesia Reunida"</div></div>
+    </div>
+    <div class="chat-scroll">
+      <div class="bubble them">Oii! Vi que deu match 😄 Seu Duna tá em bom estado?</div>
+      <div class="bubble me">Oi! Tá sim, li uma vez só, capa meio amassada no canto.</div>
+      <div class="bubble them">Fechado! Topa trocar sábado na praça da universidade?</div>
+      <div class="bubble me">Combinado, te aviso quando eu chegar 📍</div>
+    </div>
+    <div class="chat-footer">
+      <div class="fake-input">Escreva uma mensagem…</div>
+      <button class="send-btn" data-goto="confirmar">➤</button>
+    </div>
+  </section>
+
+  <!-- Confirmação -->
+  <section class="screen confirm-screen" data-screen="confirmar">
+    <div class="check-circle">✓</div>
+    <h2>Troca concluída</h2>
+    <p>Você recebeu "Duna" e entregou "Poesia Reunida". Avalie a Marina:</p>
+    <div class="stars">★★★★★</div>
+  </section>
+
+  <div class="tabbar">
+    <button class="tab active" data-tab="estante"><span class="ico">📚</span>Estante</button>
+    <button class="tab" data-tab="descobrir"><span class="ico">🔀</span>Descobrir</button>
+    <button class="tab" data-tab="chat"><span class="ico">💬</span>Conversas</button>
+  </div>
+</div>
+
+<p class="hint">Isto é um protótipo de demonstração — os dados são fictícios, feitos pra testar o fluxo com usuários, não um app funcional.</p>
+
+<script>
+  const shelfBooks = [
+    { title: 'Duna', color: 'var(--moss)' },
+    { title: 'O Sol é\npara Todos', color: 'var(--wine)' },
+    { title: 'Poesia\nReunida', color: 'var(--gold)' },
+    { title: 'Cem Anos\nde Solidão', color: '#6b5b95' },
+    { title: 'A Menina que\nRoubava Livros', color: '#3a6b7a' },
+    { title: 'Admirável\nMundo Novo', color: '#8a4b2f' },
+  ];
+  const shelfGrid = document.getElementById('shelfGrid');
+  shelfBooks.forEach(b => {
+    const el = document.createElement('div');
+    el.className = 'mini-book';
+    el.style.background = b.color;
+    el.textContent = b.title;
+    shelfGrid.appendChild(el);
+  });
+  const addEl = document.createElement('button');
+  addEl.className = 'add-book';
+  addEl.setAttribute('aria-label', 'Adicionar livro');
+  addEl.textContent = '+';
+  shelfGrid.appendChild(addEl);
+
+  const deck = [
+    { title: 'A Revolução\ndos Bichos', author: 'George Orwell', badge: '1.2 km · Seminovo', color: 'var(--wine)' },
+    { title: 'Torto Arado', author: 'Itamar Vieira Jr.', badge: '600 m · Ótimo estado', color: 'var(--moss)' },
+    { title: 'Neuromancer', author: 'William Gibson', badge: '2.4 km · Bom estado', color: '#3a5a8a' },
+  ];
+  const swipeArea = document.getElementById('swipeArea');
+  let deckIndex = 0;
+
+  function renderDeck() {
+    swipeArea.innerHTML = '';
+    deck.slice(deckIndex, deckIndex + 2).reverse().forEach((book, i) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.background = book.color;
+      card.innerHTML = `<span class="badge">${book.badge}</span><h3>${book.title}</h3><div class="author">${book.author}</div>`;
+      swipeArea.appendChild(card);
+    });
+  }
+  renderDeck();
+
+  function swipe(direction) {
+    const topCard = swipeArea.lastElementChild;
+    if (!topCard) return;
+    topCard.classList.add(direction === 'like' ? 'leaving-like' : 'leaving-pass');
+    const wasLastLike = direction === 'like' && deckIndex === deck.length - 1;
+    setTimeout(() => {
+      deckIndex++;
+      if (deckIndex >= deck.length) {
+        deckIndex = 0;
+      }
+      renderDeck();
+      if (wasLastLike) goTo('match');
+    }, 260);
+  }
+  document.getElementById('likeBtn').addEventListener('click', () => swipe('like'));
+  document.getElementById('passBtn').addEventListener('click', () => swipe('pass'));
+
+  function goTo(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.dataset.screen === name));
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  }
+  document.querySelectorAll('[data-goto]').forEach(el => {
+    el.addEventListener('click', () => goTo(el.dataset.goto));
+  });
+  document.querySelectorAll('.tab').forEach(el => {
+    el.addEventListener('click', () => goTo(el.dataset.tab));
+  });
+</script>
+
+</body>
+</html>
